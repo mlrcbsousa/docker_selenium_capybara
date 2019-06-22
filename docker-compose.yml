@@ -1,0 +1,43 @@
+# ./docker-compose.yml
+
+version: '3.1'
+services:
+  web:
+    build: .
+    command: >
+      bash -c "
+        RAILS_ENV=test puma -b tcp://0.0.0.0:3001 -d &&
+        # Run test server detached
+
+        puma -C config/puma.rb
+        # Run web server
+        "
+    ports: ['3000:3000', '3001:3001']
+      # Bind service ports to host machine
+    environment:
+      - SELENIUM_HOST=selenium
+      - SELENIUM_PORT=4444
+      - TEST_APP_HOST=web
+      - TEST_PORT=3001
+      # See ./test/test_helper.rb for Capybara & Selenium webdriver config
+    volumes:
+      - bundle_cache:/bundle
+       # Map bundle cache to named volume
+      - .:/app
+       # Map /app files back to host drive, and visa versa
+    stdin_open: true
+    tty: true
+      # Allow interactive byebug sessions.
+
+  selenium:
+    image: selenium/standalone-chrome-debug:3.0.1-germanium
+      # Debug version enables VNC ability
+    ports: ['4444:4444', '5900:5900']
+      # Bind selenium port & VNC port
+    logging:
+      driver: none
+      # Disable noisy logs
+
+volumes:
+  bundle_cache:
+  # Mount volume with default driver
